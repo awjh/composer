@@ -17,12 +17,14 @@
 const AssetRegistry = require('../lib/assetregistry');
 const BusinessNetworkConnection = require('..').BusinessNetworkConnection;
 const BusinessNetworkDefinition = require('composer-common').BusinessNetworkDefinition;
+const CardStore = require('composer-common').BusinessNetworkCardStore;
 const ComboConnectionProfileStore = require('composer-common').ComboConnectionProfileStore;
 const commonQuery = require('composer-common').Query;
 const Connection = require('composer-common').Connection;
 const ConnectionProfileStore = require('composer-common').ConnectionProfileStore;
 const Factory = require('composer-common').Factory;
 const FSConnectionProfileStore = require('composer-common').FSConnectionProfileStore;
+const IdCard = require('composer-common').IdCard;
 const IdentityRegistry = require('../lib/identityregistry');
 const ModelManager = require('composer-common').ModelManager;
 const ParticipantRegistry = require('../lib/participantregistry');
@@ -139,7 +141,7 @@ describe('BusinessNetworkConnection', () => {
 
     });
 
-    describe('#connect', () => {
+    describe('#connectWithDetails', () => {
 
         it('should create a connection and download the business network archive', () => {
             sandbox.stub(businessNetworkConnection.connectionProfileManager, 'connect').resolves(mockConnection);
@@ -151,7 +153,7 @@ describe('BusinessNetworkConnection', () => {
             sandbox.stub(Util, 'queryChainCode').withArgs(mockSecurityContext, 'getBusinessNetwork', []).resolves(buffer);
             sandbox.stub(BusinessNetworkDefinition, 'fromArchive').resolves(mockBusinessNetworkDefinition);
 
-            return businessNetworkConnection.connect('testprofile', 'testnetwork', 'enrollmentID', 'enrollmentSecret')
+            return businessNetworkConnection.connectWithDetails('testprofile', 'testnetwork', 'enrollmentID', 'enrollmentSecret')
             .then((result) => {
                 sinon.assert.calledOnce(businessNetworkConnection.connectionProfileManager.connect);
                 sinon.assert.calledWith(businessNetworkConnection.connectionProfileManager.connect, 'testprofile', 'testnetwork');
@@ -179,7 +181,7 @@ describe('BusinessNetworkConnection', () => {
             sandbox.stub(Util, 'queryChainCode').withArgs(mockSecurityContext, 'getBusinessNetwork', []).resolves(buffer);
             sandbox.stub(BusinessNetworkDefinition, 'fromArchive').resolves(mockBusinessNetworkDefinition);
 
-            return businessNetworkConnection.connect('testprofile', 'testnetwork', 'enrollmentID', 'enrollmentSecret', { some: 'other', options: true })
+            return businessNetworkConnection.connectWithDetails('testprofile', 'testnetwork', 'enrollmentID', 'enrollmentSecret', { some: 'other', options: true })
             .then((result) => {
                 sinon.assert.calledOnce(businessNetworkConnection.connectionProfileManager.connect);
                 sinon.assert.calledWith(businessNetworkConnection.connectionProfileManager.connect, 'testprofile', 'testnetwork', { some: 'other', options: true });
@@ -213,7 +215,7 @@ describe('BusinessNetworkConnection', () => {
                 { $class: 'org.acme.sample.SampleEvent', eventId: 'event2' }
             ]);
 
-            return businessNetworkConnection.connect('testprofile', 'testnetwork', 'enrollmentID', 'enrollmentSecret', { some: 'other', options: true })
+            return businessNetworkConnection.connectWithDetails('testprofile', 'testnetwork', 'enrollmentID', 'enrollmentSecret', { some: 'other', options: true })
             .then((result) => {
                 sinon.assert.calledTwice(cb); // two events
                 const ev1 = cb.args[0][0];
@@ -226,6 +228,74 @@ describe('BusinessNetworkConnection', () => {
                 ev2.getIdentifier().should.equal('event2');
             });
         });
+    });
+
+    describe('#connect',()=>{
+        const userName = 'FredBloggs';
+        const enrollmentSecret = 'password';
+        const keyValStore = '/conga/conga/conga';
+
+        beforeEach(() => {
+            sandbox.stub(businessNetworkConnection.connectionProfileManager, 'connectWithData').resolves(mockConnection);
+            let mockCardStore = sinon.createStubInstance(CardStore);
+            let mockIdCard = sinon.createStubInstance(IdCard);
+            mockCardStore.get.resolves(mockIdCard);
+            mockIdCard.getEnrollmentCredentials.returns({secret: enrollmentSecret});
+            mockIdCard.getUserName.returns(userName);
+            mockIdCard.getConnectionProfile.returns({ keyValStore: keyValStore });
+            businessNetworkConnection.cardStore = mockCardStore;
+
+            mockConnection.login.resolves(mockSecurityContext);
+            mockConnection.ping.resolves();
+            const buffer = Buffer.from(JSON.stringify({
+                data: 'aGVsbG8='
+            }));
+            sandbox.stub(Util, 'queryChainCode').withArgs(mockSecurityContext, 'getBusinessNetwork', []).resolves(buffer);
+            sandbox.stub(BusinessNetworkDefinition, 'fromArchive').resolves(mockBusinessNetworkDefinition);
+            const cb = sinon.stub();
+            businessNetworkConnection.on('event', cb);
+            mockConnection.on.withArgs('events', sinon.match.func).yields([
+                { $class: 'org.acme.sample.SampleEvent', eventId: 'event1' },
+                { $class: 'org.acme.sample.SampleEvent', eventId: 'event2' }
+            ]);
+        });
+
+        afterEach(() => {
+            sandbox.reset();
+        });
+
+
+        it('Correct with with existing card name & additional options',()=>{
+
+
+            return businessNetworkConnection.connect('cardName', { some: 'other', options: true })
+                .then((result)=>{
+                    sinon.assert.calledWith(mockConnection.login, userName, enrollmentSecret);
+                });
+        });
+
+        it('should add card name to connection profile additional options when additional options not specified', () => {
+            const cardName = 'CARD_NAME';
+            return businessNetworkConnection.connect(cardName)
+                .then(result => {
+                    sinon.assert.calledWith(businessNetworkConnection.connectionProfileManager.connectWithData,
+                        sinon.match.any,
+                        sinon.match.any,
+                        sinon.match.has('cardName', cardName));
+                });
+        });
+
+        it('should override cardName property specified in additional options', () => {
+            const cardName = 'CARD_NAME';
+            return businessNetworkConnection.connect(cardName, { cardName: 'WRONG' })
+                .then(result => {
+                    sinon.assert.calledWith(businessNetworkConnection.connectionProfileManager.connectWithData,
+                        sinon.match.any,
+                        sinon.match.any,
+                        sinon.match.has('cardName', cardName));
+                });
+        });
+
     });
 
     describe('#disconnect', () => {

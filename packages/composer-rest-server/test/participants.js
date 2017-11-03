@@ -67,7 +67,7 @@ const bfs_fs = BrowserFS.BFSRequire('fs');
                 type : 'embedded'
             })
             .then(() => {
-                return adminConnection.connect('defaultProfile', 'admin', 'Xurw3yU9zI0l');
+                return adminConnection.connectWithDetails('defaultProfile', 'admin', 'Xurw3yU9zI0l');
             })
             .then(() => {
                 return BusinessNetworkDefinition.fromDirectory('./test/data/bond-network');
@@ -89,7 +89,7 @@ const bfs_fs = BrowserFS.BFSRequire('fs');
             .then((result) => {
                 app = result.app;
                 businessNetworkConnection = new BusinessNetworkConnection({ fs: bfs_fs });
-                return businessNetworkConnection.connect('defaultProfile', 'bond-network', 'admin', 'Xurw3yU9zI0l');
+                return businessNetworkConnection.connectWithDetails('defaultProfile', 'bond-network', 'admin', 'Xurw3yU9zI0l');
             })
             .then(() => {
                 return businessNetworkConnection.getParticipantRegistry('org.acme.bond.Member');
@@ -113,38 +113,6 @@ const bfs_fs = BrowserFS.BFSRequire('fs');
                         res.body.should.deep.equal([
                             participantData[0],
                             participantData[1],
-                        ]);
-                    });
-            });
-
-            it('should return all of the participants with a specified property value', () => {
-                return chai.request(app)
-                    .get(`/api/${prefix}Member?filter={"where": {"name": "Bob"}}`)
-                    .then((res) => {
-                        res.should.be.json;
-                        res.body.should.deep.equal([
-                            participantData[1]
-                        ]);
-                    });
-            });
-
-            it('should return all of the participants with a range of property value', () => {
-                return chai.request(app)
-                    .get(`/api/${prefix}Member?filter={"where": {"lastName": {"between":["A", "C"]}}}`)
-                    .then((res) => {
-                        res.should.be.json;
-                        res.body.should.deep.equal([
-                            participantData[1]
-                        ]);
-                    });
-            });
-
-            it('should return an empty with a specified property value does not exsit in the registry', () => {
-                return chai.request(app)
-                    .get(`/api/${prefix}Member?filter={"where": {"lastName": "Chow"}}`)
-                    .then((res) => {
-                        res.should.be.json;
-                        res.body.should.deep.equal([
                         ]);
                     });
             });
