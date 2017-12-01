@@ -1,15 +1,31 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+'use strict';
+
+/* eslint-disable require-jsdoc */
+/* eslint-disable valid-jsdoc */
+
 /**
  * @author: @AngularClass
  */
 
 const webpack = require('webpack');
 const helpers = require('./helpers');
-const path = require('path');
-const webpackMerge = require('webpack-merge'); // used to merge webpack configs
 /**
  * Webpack Plugins
  */
-const ProvidePlugin = require('webpack/lib/ProvidePlugin');
 const DefinePlugin = require('webpack/lib/DefinePlugin');
 const LoaderOptionsPlugin = require('webpack/lib/LoaderOptionsPlugin');
 const ContextReplacementPlugin = require('webpack/lib/ContextReplacementPlugin');
@@ -27,7 +43,7 @@ const PLAYGROUND_API = process.env.PLAYGROUND_API || 'playground-api';
  *
  * See: http://webpack.github.io/docs/configuration.html#cli
  */
-module.exports = function (options) {
+module.exports = function(options) {
     return {
 
         /**
@@ -36,26 +52,26 @@ module.exports = function (options) {
          * Do not change, leave as is or it wont work.
          * See: https://github.com/webpack/karma-webpack#source-maps
          */
-        devtool : 'inline-source-map',
+        devtool: 'inline-source-map',
 
         /**
          * Options affecting the resolving of modules.
          *
          * See: http://webpack.github.io/docs/configuration.html#resolve
          */
-        resolve : {
+        resolve: {
 
             /**
              * An array of extensions that should be used to resolve modules.
              *
              * See: http://webpack.github.io/docs/configuration.html#resolve-extensions
              */
-            extensions : ['.ts', '.js', '.json', '.html'],
+            extensions: ['.ts', '.js', '.json', '.html'],
             // An array of directory names to be resolved to the current directory
-            modules : [helpers.root('src'), 'node_modules'],
+            modules: [helpers.root('src'), 'node_modules'],
             // Use our versions of Node modules.
-            alias : {
-                sinon : require.resolve('sinon/pkg/sinon')
+            alias: {
+                sinon: require.resolve('sinon/pkg/sinon')
             }
         },
 
@@ -67,11 +83,11 @@ module.exports = function (options) {
          * 'use:' revered back to 'loader:' as a temp. workaround for #1188
          * See: https://github.com/AngularClass/angular2-webpack-starter/issues/1188#issuecomment-262872034
          */
-        module : {
+        module: {
 
-            noParse : [/sinon/],
+            noParse: [/sinon/],
 
-            rules : [
+            rules: [
                 /*
                  * Typescript loader support for .ts and Angular 2 async routes via .async.ts
                  * Replace templateUrl and stylesUrl with require()
@@ -80,23 +96,22 @@ module.exports = function (options) {
                  * See: https://github.com/TheLarkInn/angular2-template-loader
                  */
                 {
-                    test : /\.ts$/,
-                    use : [
-                        {
-                            loader : 'awesome-typescript-loader',
-                            query : {
-                                // use inline sourcemaps for "karma-remap-coverage" reporter
-                                sourceMap : false,
-                                inlineSourceMap : true,
-                                compilerOptions : {
-                                    // Remove TypeScript helpers to be injected
-                                    // below by DefinePlugin
-                                    removeComments : true
-                                }
+                    test: /\.ts$/,
+                    use: [{
+                        loader: 'awesome-typescript-loader',
+                        query: {
+                            // use inline sourcemaps for 'karma-remap-coverage' reporter
+                            sourceMap: false,
+                            inlineSourceMap: true,
+                            compilerOptions: {
+                                // Remove TypeScript helpers to be injected
+                                // below by DefinePlugin
+                                removeComments: true
                             }
-                        },
-                        'angular2-template-loader']
-                },
+                        }
+                    },
+                        'angular2-template-loader'
+                    ]},
                 /**
                  * Source map loader support for *.js files
                  * Extracts SourceMaps for source files that as added as sourceMappingURL comment.
@@ -104,11 +119,11 @@ module.exports = function (options) {
                  * See: https://github.com/webpack/source-map-loader
                  */
                 {
-                    test : /\.js$/,
-                    exclude : /(node_modules|bower_components)/,
-                    loader : 'babel-loader',
-                    query : {
-                        presets : [require.resolve('babel-preset-latest')]
+                    test: /\.js$/,
+                    exclude: /(node_modules|bower_components)/,
+                    loader: 'babel-loader',
+                    query: {
+                        presets: [require.resolve('babel-preset-latest')]
                     }
                 },
 
@@ -118,9 +133,9 @@ module.exports = function (options) {
                  * See: https://github.com/webpack/json-loader
                  */
                 {
-                    test : /\.json$/,
-                    loader : 'json-loader',
-                    exclude : [helpers.root('src/index.html')]
+                    test: /\.json$/,
+                    loader: 'json-loader',
+                    exclude: [helpers.root('src/index.html')]
                 },
                 /**
                  * Raw loader support for *.css files
@@ -129,9 +144,9 @@ module.exports = function (options) {
                  * See: https://github.com/webpack/raw-loader
                  */
                 {
-                    test : /\.css$/,
-                    loader : ['to-string-loader', 'css-loader'],
-                    exclude : [helpers.root('src/index.html')]
+                    test: /\.css$/,
+                    loader: ['to-string-loader', 'css-loader'],
+                    exclude: [helpers.root('src/index.html')]
                 },
 
                 /**
@@ -140,9 +155,9 @@ module.exports = function (options) {
                  * See: https://github.com/webpack/raw-loader
                  */
                 {
-                    test : /\.scss$/,
-                    loader : ['raw-loader', 'sass-loader'],
-                    exclude : [helpers.root('src/index.html')]
+                    test: /\.scss$/,
+                    loader: ['raw-loader', 'sass-loader'],
+                    exclude: [helpers.root('src/index.html')]
                 },
 
                 /**
@@ -152,12 +167,15 @@ module.exports = function (options) {
                  * See: https://github.com/webpack/raw-loader
                  */
                 {
-                    test : /\.html$/,
-                    loader : 'raw-loader',
-                    exclude : [helpers.root('src/index.html')]
+                    test: /\.html$/,
+                    loader: 'raw-loader',
+                    exclude: [helpers.root('src/index.html')]
                 },
 
-                {test : /sinon.*\.js$/, loader : "imports-loader?define=>false,require=>false"},
+                {
+                    test: /sinon.*\.js$/,
+                    loader: 'imports-loader?define=>false,require=>false'
+                },
 
                 /**
                  * Instruments JS files with Istanbul for subsequent code coverage reporting.
@@ -166,39 +184,39 @@ module.exports = function (options) {
                  * See: https://github.com/deepsweet/istanbul-instrumenter-loader
                  */
                 {
-                    enforce : 'post',
-                    test : /\.(js|ts)$/,
-                    loader : 'istanbul-instrumenter-loader',
-                    include : helpers.root('src'),
-                    exclude : [
+                    enforce: 'post',
+                    test: /\.(js|ts)$/,
+                    loader: 'istanbul-instrumenter-loader',
+                    include: helpers.root('src'),
+                    exclude: [
                         /node_modules/,
                         /\.spec\.(js|ts)$/
                     ]
                 },
 
                 {
-                    test : /\.woff(\?v=\d+\.\d+\.\d+)?$/,
-                    loader : "url-loader?limit=10000&minetype=application/font-woff"
+                    test: /\.woff(\?v=\d+\.\d+\.\d+)?$/,
+                    loader: 'url-loader?limit=10000&minetype=application/font-woff'
                 },
                 {
-                    test : /\.woff2(\?v=\d+\.\d+\.\d+)?$/,
-                    loader : "url-loader?limit=10000&minetype=application/font-woff"
+                    test: /\.woff2(\?v=\d+\.\d+\.\d+)?$/,
+                    loader: 'url-loader?limit=10000&minetype=application/font-woff'
                 },
                 {
-                    test : /\.ttf(\?v=\d+\.\d+\.\d+)?$/,
-                    loader : "url-loader?limit=10000&minetype=application/octet-stream"
+                    test: /\.ttf(\?v=\d+\.\d+\.\d+)?$/,
+                    loader: 'url-loader?limit=10000&minetype=application/octet-stream'
                 },
                 {
-                    test : /\.eot(\?v=\d+\.\d+\.\d+)?$/,
-                    loader : "file-loader"
+                    test: /\.eot(\?v=\d+\.\d+\.\d+)?$/,
+                    loader: 'file-loader'
                 },
                 {
-                    test : /\.svg(\?v=\d+\.\d+\.\d+)?$/,
-                    loader : "url-loader?limit=10000&minetype=image/svg+xml"
+                    test: /\.svg(\?v=\d+\.\d+\.\d+)?$/,
+                    loader: 'url-loader?limit=10000&minetype=image/svg+xml'
                 },
                 {
-                    test : /\.bna$/,
-                    loader : "buffer-loader"
+                    test: /\.bna$/,
+                    loader: 'buffer-loader'
                 }
             ]
         },
@@ -208,7 +226,7 @@ module.exports = function (options) {
          *
          * See: http://webpack.github.io/docs/configuration.html#plugins
          */
-        plugins : [
+        plugins: [
 
             /**
              * Plugin: DefinePlugin
@@ -221,11 +239,11 @@ module.exports = function (options) {
              */
             // NOTE: when adding more properties make sure you include them in custom-typings.d.ts
             new DefinePlugin({
-                'ENV' : JSON.stringify(ENV),
-                'HMR' : false,
-                'DOCKER' : DOCKER,
-                'DOCKER_COMPOSE' : DOCKER_COMPOSE,
-                'PLAYGROUND_API' : JSON.stringify(PLAYGROUND_API),
+                'ENV': JSON.stringify(ENV),
+                'HMR': false,
+                'DOCKER': DOCKER,
+                'DOCKER_COMPOSE': DOCKER_COMPOSE,
+                'PLAYGROUND_API': JSON.stringify(PLAYGROUND_API),
                 /* 'process.env': {
                   'ENV': JSON.stringify(ENV),
                   'NODE_ENV': JSON.stringify(ENV),
@@ -255,17 +273,17 @@ module.exports = function (options) {
              * See: https://gist.github.com/sokra/27b24881210b56bbaff7
              */
             new LoaderOptionsPlugin({
-                debug : true,
-                options : {}
+                debug: true,
+                options: {}
             }),
 
             new webpack.ProvidePlugin({
-                jQuery : 'jquery',
-                $ : 'jquery',
-                jquery : 'jquery'
+                jQuery: 'jquery',
+                $: 'jquery',
+                jquery: 'jquery'
             }),
         ],
-        
+
         node: {
             fs: 'empty'
         }

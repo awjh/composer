@@ -1,17 +1,4 @@
 #!/usr/bin/env node
-/*
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 'use strict';
 
@@ -70,16 +57,18 @@ const opener = require('opener');
 const path = require('path');
 
 if (process.env.COMPOSER_CONFIG) {
-  const config = JSON.parse(process.env.COMPOSER_CONFIG);
-  app.get('/config.json', (req, res, next) => {
-    res.json(config);
-  });
+    const config = JSON.parse(process.env.COMPOSER_CONFIG);
+    app.get('/config.json', (req, res, next) => {
+        res.json(config);
+    });
 }
 
 const dist = path.resolve(__dirname, 'dist');
 app.use(express.static(dist));
 app.all('/*', (req, res, next) => {
-  res.sendFile('index.html', { root: dist });
+    res.sendFile('index.html', {
+        root: dist
+    });
 });
 
 const LOG = Logger.getLog('Composer');
