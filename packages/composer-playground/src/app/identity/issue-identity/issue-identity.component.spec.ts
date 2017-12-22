@@ -15,7 +15,7 @@ import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { IssueIdentityComponent } from './issue-identity.component';
 import { AlertService } from '../../basic-modals/alert.service';
 import { ClientService } from '../../services/client.service';
-import { BusinessNetworkConnection, ParticipantRegisty } from 'composer-client';
+import { BusinessNetworkConnection } from 'composer-client';
 import { Resource } from 'composer-common';
 
 @Directive({
@@ -94,45 +94,17 @@ describe('IssueIdentityComponent', () => {
 
         it('should create a sorted list of participantFQIs', fakeAsync(() => {
 
-            // Set up mocked/known items to test against
-            let mockParticpantRegistry = sinon.createStubInstance(ParticipantRegisty);
-            let mockParticipant1 = sinon.createStubInstance(Resource);
-            mockParticipant1.getFullyQualifiedIdentifier.returns('org.doge.Doge#DOGE_1');
-            let mockParticipant2 = sinon.createStubInstance(Resource);
-            mockParticipant2.getFullyQualifiedIdentifier.returns('org.doge.Doge#DOGE_2');
-            mockParticpantRegistry.getAll.returns([mockParticipant2, mockParticipant1]);
-            mockBusinessNetworkConnection = sinon.createStubInstance(BusinessNetworkConnection);
-            mockBusinessNetworkConnection.getAllParticipantRegistries.returns(Promise.resolve([mockParticpantRegistry]));
-            mockClientService.getBusinessNetworkConnection.returns(mockBusinessNetworkConnection);
-
-            // Starts Empty
-            component['participantFQIs'].should.be.empty;
+            let p1 = new Resource('resource1');
+            let p2 = new Resource('resource2');
+            component['participants'].set('org.doge.Doge#DOGE_1', p1);
+            component['participants'].set('org.doge.Doge#DOGE_2', p2);
 
             // Run method
             component['loadParticipants']();
-
-            tick();
 
             // Check we load the participants
             let expected = ['org.doge.Doge#DOGE_1', 'org.doge.Doge#DOGE_2'];
             component['participantFQIs'].should.deep.equal(expected);
-
-        }));
-
-        it('should alert if there is an error', fakeAsync(() => {
-
-            // Force error
-            mockBusinessNetworkConnection.getAllParticipantRegistries.returns(Promise.reject('some error'));
-            mockClientService.getBusinessNetworkConnection.returns(mockBusinessNetworkConnection);
-
-            // Run method
-            component['loadParticipants']();
-
-            tick();
-
-            // Check we error
-            mockAlertService.errorStatus$.next.should.be.called;
-            mockAlertService.errorStatus$.next.should.be.calledWith('some error');
 
         }));
     });

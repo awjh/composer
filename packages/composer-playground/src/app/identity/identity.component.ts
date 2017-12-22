@@ -8,7 +8,7 @@ import { IdentityIssuedComponent } from './identity-issued';
 import { AlertService } from '../basic-modals/alert.service';
 import { ClientService } from '../services/client.service';
 import { IdentityCardService } from '../services/identity-card.service';
-import { IdCard } from 'composer-common';
+import { IdCard, Resource } from 'composer-common';
 
 import { saveAs } from 'file-saver';
 
@@ -22,9 +22,10 @@ import { saveAs } from 'file-saver';
 export class IdentityComponent implements OnInit {
 
     private identityCards: Map<string, IdCard>;
-    private cardRefs: string[];
+    private myIDs: Array<{ref, usable}>;
     private allIdentities: Object[]; // array of all IDs
     private currentIdentity: string = null;
+    private participants: Map<string, Resource> = new Map<string, Resource>();
     private businessNetworkName;
 
     constructor(private modalService: NgbModal,
@@ -39,8 +40,10 @@ export class IdentityComponent implements OnInit {
     }
 
     loadAllIdentities(): Promise<void> {
-        this.loadMyIdentities();
         return this.clientService.ensureConnected()
+            .then(() => {
+                return this.loadParticipants();
+            })
             .then(() => {
                 this.businessNetworkName = this.clientService.getBusinessNetwork().getName();
                 return this.clientService.getBusinessNetworkConnection().getIdentityRegistry();
@@ -48,6 +51,7 @@ export class IdentityComponent implements OnInit {
                 return registry.getAll();
             }).then((ids) => {
                 // get the card ref for each identity
+
                 let connectionProfile = this.identityCardService.getCurrentIdentityCard().getConnectionProfile();
                 let qpn: string = this.identityCardService.getQualifiedProfileName(connectionProfile);
 
@@ -59,7 +63,18 @@ export class IdentityComponent implements OnInit {
                     id.ref = this.identityCardService.getCardRefFromIdentity(id.name, this.businessNetworkName, qpn);
                 });
 
+                ids.forEach((el, index) => {
+                    if (el['participant'].getType() !== 'NetworkAdmin' && ids[index]['state'] !== 'REVOKED') {
+                       if (!this.getParticipant(el['participant'].getNamespace() + '.' + el['participant'].getType() + '#' + el['participant'].getIdentifier())) {
+                          ids[index]['state'] = 'IDENTIFIER NOT FOUND';
+                       }
+                    }
+                });
+
                 this.allIdentities = ids;
+            })
+            .then(() => {
+                return this.loadMyIdentities();
             })
             .catch((error) => {
                 this.alertService.errorStatus$.next(error);
@@ -74,12 +89,23 @@ export class IdentityComponent implements OnInit {
         let qpn = this.identityCardService.getQualifiedProfileName(connectionProfile);
 
         this.identityCards = this.identityCardService.getAllCardsForBusinessNetwork(businessNetwork, qpn);
+        let cardRefs = Array.from(this.identityCards.keys());
+        this.myIDs = cardRefs.map((elm) => {
+            let id = this.allIdentities.find((el) => {
+              return el['ref'] === elm;
+            });
 
-        this.cardRefs = Array.from(this.identityCards.keys());
+            return {ref: elm, usable: id['state'] !== 'IDENTIFIER NOT FOUND' && id['state'] !== 'REVOKED'};
+        }).sort((a, b) => {
+            return a.ref.localeCompare(b.ref);
+        });
     }
 
     issueNewId(): Promise<void> {
-        return this.modalService.open(IssueIdentityComponent).result
+        let modalRef = this.modalService.open(IssueIdentityComponent);
+        modalRef.componentInstance.participants = this.participants;
+
+        return modalRef.result
             .then((result) => {
                 if (result) {
                     let connectionProfile = this.identityCardService.getCurrentIdentityCard().getConnectionProfile();
@@ -150,8 +176,9 @@ export class IdentityComponent implements OnInit {
             });
     }
 
-    setCurrentIdentity(cardRef: string): Promise<void> {
-        if (this.currentIdentity === cardRef) {
+    setCurrentIdentity(ID: {ref, usable}): Promise<void> {
+        let cardRef = ID.ref;
+        if (this.currentIdentity === cardRef || !ID.usable) {
             return Promise.resolve();
         }
 
@@ -247,8 +274,8 @@ export class IdentityComponent implements OnInit {
                     return this.clientService.revokeIdentity(identity)
                         .then(() => {
                             // only try and remove it if its in the wallet
-                            let walletIdentity = this.cardRefs.find((myIdentity) => {
-                                return identity.ref === myIdentity;
+                            let walletIdentity = this.myIDs.find((myIdentity) => {
+                                return identity.ref === myIdentity.ref;
                             });
 
                             if (walletIdentity) {
@@ -279,5 +306,34 @@ export class IdentityComponent implements OnInit {
                     this.alertService.errorStatus$.next(reason);
                 }
             });
+    }
+
+    loadParticipants() {
+        return this.clientService.getBusinessNetworkConnection().getAllParticipantRegistries()
+            .then((participantRegistries) => {
+                return Promise.all(participantRegistries.map((registry) => {
+                    return registry.getAll();
+                }));
+            })
+            .then((participantArrays) => {
+                return Promise.all(
+                    participantArrays.reduce(
+                        (accumulator, currentValue) => accumulator.concat(currentValue),
+                        []
+                    ));
+            })
+            .then((allParticipants) => {
+                return Promise.all(allParticipants.map((registryParticipant) => {
+                    console.log('HELLO WORLD', registryParticipant.getFullyQualifiedIdentifier(), registryParticipant);
+                    return this.participants.set(registryParticipant.getFullyQualifiedIdentifier(), registryParticipant);
+                }));
+            })
+            .catch((error) => {
+                this.alertService.errorStatus$.next(error);
+            });
+    }
+
+    getParticipant(fqi: string): any {
+        return this.participants.get(fqi);
     }
 }
