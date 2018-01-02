@@ -14,7 +14,7 @@ import { IssueIdentityComponent } from './issue-identity';
 import { AlertService } from '../basic-modals/alert.service';
 import { ClientService } from '../services/client.service';
 import { IdentityCardService } from '../services/identity-card.service';
-import { BusinessNetworkConnection, ParticipantRegisty } from 'composer-client';
+import { BusinessNetworkConnection, ParticipantRegistry } from 'composer-client';
 import { IdCard } from 'composer-common';
 
 import * as fileSaver from 'file-saver';
@@ -799,7 +799,7 @@ describe(`IdentityComponent`, () => {
         it('should create a map of participants', fakeAsync(() => {
 
             // Set up mocked/known items to test against
-            let mockParticpantRegistry = sinon.createStubInstance(ParticipantRegisty);
+            let mockParticpantRegistry = sinon.createStubInstance(ParticipantRegistry);
             let mockParticipant1 = sinon.createStubInstance(Resource);
             mockParticipant1.getFullyQualifiedIdentifier.returns('org.doge.Doge#DOGE_1');
             let mockParticipant2 = sinon.createStubInstance(Resource);

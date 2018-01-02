@@ -15,7 +15,7 @@ import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { IssueIdentityComponent } from './issue-identity.component';
 import { AlertService } from '../../basic-modals/alert.service';
 import { ClientService } from '../../services/client.service';
-import { BusinessNetworkConnection } from 'composer-client';
+import { BusinessNetworkConnection, ParticipantRegistry } from 'composer-client';
 import { Resource } from 'composer-common';
 
 @Directive({
@@ -94,10 +94,19 @@ describe('IssueIdentityComponent', () => {
 
         it('should create a sorted list of participantFQIs', fakeAsync(() => {
 
-            let p1 = new Resource('resource1');
-            let p2 = new Resource('resource2');
-            component['participants'].set('org.doge.Doge#DOGE_1', p1);
-            component['participants'].set('org.doge.Doge#DOGE_2', p2);
+            // Set up mocked/known items to test against
+            let mockParticpantRegistry = sinon.createStubInstance(ParticipantRegistry);
+            let mockParticipant1 = sinon.createStubInstance(Resource);
+            mockParticipant1.getFullyQualifiedIdentifier.returns('org.doge.Doge#DOGE_1');
+            let mockParticipant2 = sinon.createStubInstance(Resource);
+            mockParticipant2.getFullyQualifiedIdentifier.returns('org.doge.Doge#DOGE_2');
+            mockParticpantRegistry.getAll.returns([mockParticipant2, mockParticipant1]);
+            mockBusinessNetworkConnection = sinon.createStubInstance(BusinessNetworkConnection);
+            mockBusinessNetworkConnection.getAllParticipantRegistries.returns(Promise.resolve([mockParticpantRegistry]));
+            mockClientService.getBusinessNetworkConnection.returns(mockBusinessNetworkConnection);
+
+            // Starts Empty
+            component['participantFQIs'].should.be.empty;
 
             // Run method
             component['loadParticipants']();
